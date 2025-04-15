@@ -1,8 +1,11 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from gui_layout import InferenceGUI
+import multiprocessing
 
+# 主程序入口
 if __name__ == "__main__":
+    # 设置多进程启动方法
+    multiprocessing.set_start_method("spawn")
     app = QApplication(sys.argv)
     gui = InferenceGUI()
     gui.show()
