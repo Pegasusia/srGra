@@ -13,6 +13,8 @@ from PyQt5.QtGui import QPixmap
 from PIL import Image  # 添加导入，用于读取图像的真实分辨率
 import multiprocessing  # 用于多进程处理
 
+from inference_process import run_inference_process  # 导入推理函数
+
 # 信号类，用于线程间通信
 class LogSignal(QObject):
     log_signal = pyqtSignal(str)
@@ -282,8 +284,8 @@ class InferenceGUI(QMainWindow):
         self.stop_button.setEnabled(True)
 
         if self.video_radio.isChecked():
-            # 视频模式，使用多线程
-            print("视频模式，使用多线程")
+            # 视频模式，使用多进程
+            print("视频模式，使用多进程")
             self.start_multi_process(input_path, model_path, output_folder)
         else:
             # 图片/文件夹图片 使用多线程
@@ -459,32 +461,8 @@ class InferenceGUI(QMainWindow):
             output_width, output_height = img.size
             # output_data = list(img.getdata())  # 获取输出图像的像素数据
         output_size = os.path.getsize(output_image_path) / 1024  # 文件大小 (KB)
-        self.output_image_info.setText(f"输出图片信息: {output_width}x{output_height}, {output_size:.2f} KB")
+        self.output_image_info.setText(f"分辨率提升后的图片信息: {output_width}x{output_height}, {output_size:.2f} KB")
 
-
-    # def display_video_frames(self, input_video_path, output_video_path):
-    #     """显示输入视频和生成视频的第一帧"""
-    #     # 提取输入视频的第一帧
-    #     input_frame_path = "./temp_input_frame.png"
-    #     os.system(f'ffmpeg -i "{input_video_path}" -vf "select=eq(n\,0)" -q:v 3 "{input_frame_path}" -y')
-
-    #     # 提取生成视频的第一帧
-    #     output_frame_path = "./temp_output_frame.png"
-    #     os.system(f'ffmpeg -i "{output_video_path}" -vf "select=eq(n\,0)" -q:v 3 "{output_frame_path}" -y')
-
-    #     # 显示输入视频的第一帧
-    #     input_pixmap = QPixmap(input_frame_path)
-    #     input_pixmap = input_pixmap.scaled(self.input_image_label.width(), self.input_image_label.height())
-    #     self.input_image_label.setPixmap(input_pixmap)
-
-    #     # 显示生成视频的第一帧
-    #     output_pixmap = QPixmap(output_frame_path)
-    #     output_pixmap = output_pixmap.scaled(self.output_image_label.width(), self.output_image_label.height())
-    #     self.output_image_label.setPixmap(output_pixmap)
-
-    #     # 删除临时帧文件
-    #     os.remove(input_frame_path)
-    #     os.remove(output_frame_path)
 
     def open_output_folder(self, folder_path):
         """自动打开输出文件夹"""
@@ -501,72 +479,73 @@ class InferenceGUI(QMainWindow):
         self.log_text.ensureCursorVisible()  # 确保滚动到最新日志
 
 
-def run_inference_process(input_path, model_path, output_folder, selected_model, log_queue):
-    """独立的推理函数，用于多进程调用"""
+# def run_inference_process(input_path, model_path, output_folder, selected_model, log_queue):
+#     """独立的推理函数，用于多进程调用"""
 
-    # log_queue.put(f"开始推理: {input_path}, 模型: {model_path}, 输出: {output_folder}, 网络: {selected_model}")
+#     # log_queue.put(f"开始推理: {input_path}, 模型: {model_path}, 输出: {output_folder}, 网络: {selected_model}")
 
-    # 根据模型选择推理脚本
-    if selected_model == "ESRGAN":
-        script_name = "inference/inference_esrgan.py"
-    elif selected_model == "EDSR":
-        script_name = "inference/inference_edsr.py"
-    elif selected_model == "BasicVSR":
-        script_name = "inference/inference_basicvsr.py"
-    else:
-        log_queue.put("[ERROR] 未知的神经网络模型选择.")
-        return
+#     # 根据模型选择推理脚本
+#     if selected_model == "ESRGAN":
+#         script_name = "inference/inference_esrgan.py"
+#     elif selected_model == "EDSR":
+#         script_name = "inference/inference_edsr.py"
+#     elif selected_model == "BasicVSR":
+#         script_name = "inference/inference_basicvsr.py"
+#     else:
+#         log_queue.put("[ERROR] 未知的神经网络模型选择.")
+#         return
 
-    # 构建命令
-    command = [
-        "python", script_name, "--input_path", input_path, "--model_path", model_path, "--save_path", output_folder
-    ]
+#     # 构建命令
+#     command = [
+#         "python", script_name, "--input_path", input_path, "--model_path", model_path, "--save_path", output_folder
+#     ]
 
-    # 执行推理脚本
-    try:
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            universal_newlines=True,
-            bufsize=1,
-            env={
-                **os.environ, "PYTHONUNBUFFERED": "1"
-            }  # 禁用缓冲
-        )
+#     # 执行推理脚本
+#     try:
+#         process = subprocess.Popen(
+#             command,
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE,
+#             text=True,
+#             universal_newlines=True,
+#             bufsize=1,
+#             env={
+#                 **os.environ, "PYTHONUNBUFFERED": "1"
+#             }  # 禁用缓冲
+#         )
 
-        def read_stream(stream, log_level):
-            """读取子进程的输出流并发送到日志队列"""
-            for line in iter(stream.readline, ""):
-                log_queue.put(f"{line.strip()}")
-            stream.close()
+#         def read_stream(stream, log_level):
+#             """读取子进程的输出流并发送到日志队列"""
+#             for line in iter(stream.readline, ""):
+#                 log_queue.put(f"{line.strip()}")
+#             stream.close()
 
-        # 创建线程读取 stdout 和 stderr
-        stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, "INFO"))
-        stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, "ERROR"))
-        stdout_thread.start()
-        stderr_thread.start()
+#         # 创建线程读取 stdout 和 stderr
+#         stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, "INFO"))
+#         stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, "ERROR"))
+#         stdout_thread.start()
+#         stderr_thread.start()
 
-        # 等待子进程完成
-        process.wait()
-        stdout_thread.join()
-        stderr_thread.join()
+#         # 等待子进程完成
+#         process.wait()
+#         stdout_thread.join()
+#         stderr_thread.join()
 
-        if process.returncode == 0:
-            log_queue.put("[SUCCESS] 视频分辨率重建成功!\n")
+#         if process.returncode == 0:
+#             log_queue.put("[SUCCESS] 视频分辨率重建成功!\n")
 
-            # 自动打开输出文件夹
-            if os.name == "nt":  # Windows
-                os.startfile(output_folder)
-            elif os.name == "posix":  # macOS 或 Linux
-                subprocess.Popen(["open", output_folder])
-            else:
-                self.log_message("ERROR", "无法打开输出文件夹，请手动检查路径。")
-        else:
-            log_queue.put(f"[ERROR] 推理失败，返回代码：{process.returncode}")
-    except Exception as e:
-        log_queue.put(f"[ERROR] 推理过程中发生错误：{str(e)}")
+#             # 自动打开输出文件夹
+#             if os.name == "nt":  # Windows
+#                 os.startfile(output_folder)
+#             elif os.name == "posix":
+#                 # macOS 或 Linux
+#                 subprocess.Popen(["open", output_folder])
+#             else:
+#                 self.log_message("ERROR", "无法打开输出文件夹，请手动检查路径。")
+#         else:
+#             log_queue.put(f"[ERROR] 推理失败，返回代码：{process.returncode}")
+#     except Exception as e:
+#         log_queue.put(f"[ERROR] 推理过程中发生错误：{str(e)}")
 
 # 主程序入口
 if __name__ == "__main__":

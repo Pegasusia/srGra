@@ -1,4 +1,4 @@
 input_path: D:/gracode/video/video_12f.mp4
 model_path: D:/gracode/models/Video/BasicVSR/BasicVSR_REDS4.pth
-output_folder: D:/gracode/results/9
+output_folder: D:/gracode/results/1111
 selected_model: BasicVSR
