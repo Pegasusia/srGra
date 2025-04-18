@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from skimage import img_as_float
 from skimage.color import rgb2gray
-# from skimage.metrics import niqe, brisque, piqe
+from skimage.metrics import peak_signal_noise_ratio as skimage_psnr
 
 
 def calculate_psnr(img1, img2):

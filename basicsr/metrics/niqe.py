@@ -197,7 +197,7 @@ def calculate_niqe(img, crop_border, input_order='HWC', convert_to='y', **kwargs
     if img is None or img.size == 0:
         raise ValueError('Input image is None or empty.')
 
-    print('img.shape:', img.shape)
+    # print('img.shape:', img.shape)
 
     img = img.astype(np.float32)
     if input_order != 'HW':

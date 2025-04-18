@@ -5,8 +5,10 @@ import numpy as np
 import os
 import torch
 import time
+import sys
 
 from tqdm import tqdm
+import threading
 from inference_esrgan_up import *
 
 from basicsr.archs.rrdbnet_arch import RRDBNet
@@ -14,12 +16,10 @@ from basicsr.metrics.niqe import calculate_niqe
 # from inference_niqe import calculate_niqe_2
 
 
-import sys
-
-
 def main():
     # refresh stdout in the console
     sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1, encoding='utf-8')
+
 
     start_time = time.perf_counter()
 
@@ -33,8 +33,9 @@ def main():
         r'D:\gracode\sr_models\Pic\ESRGAN\ESRGAN_PSNR_SRx4_DF2K_official-150ff491.pth'  # noqa: E501
     )
     parser.add_argument('--input', type=str, default=None, help='input image folder')
-    parser.add_argument('--input_file', type=str, default=r'D:\Resource\Picture\ya\ya.png', help='input single image file')
-    parser.add_argument('--output', type=str, default= r'D:\gracode\sr_results\11', help='output folder')
+    parser.add_argument(
+        '--input_file', type=str, default=r'D:\Resource\Picture\ya\ya.png', help='input single image file')
+    parser.add_argument('--output', type=str, default=r'D:\gracode\sr_results\11', help='output folder')
     args = parser.parse_args()
 
     print("Load model done...")
@@ -53,6 +54,7 @@ def main():
     if args.input_file:
         # process a single image
         process_image(args.input_file, model, device, args.output)
+
     else:
 
         # 统计输入文件夹中的图像数量
@@ -60,8 +62,6 @@ def main():
         total_images = len(image_paths)
 
         print(f"Total images: {total_images}")
-
-
 
         for idx, path in enumerate(sorted(glob.glob(os.path.join(args.input, '*')))):
             imgname = os.path.splitext(os.path.basename(path))[0]
@@ -88,6 +88,7 @@ def main():
 
     end_time = time.perf_counter()
     print(f"Total time: {end_time - start_time:.6f} seconds")
+
 
 def process_image(image_path, model, device, output_folder):
     """Process a single image."""
@@ -119,10 +120,6 @@ def process_image(image_path, model, device, output_folder):
         psnr_enhanced = calculate_psnr(original_image, enhanced_image)  # 增强图片的 PSNR
         print(f'PSNR (Enhanced): {psnr_enhanced:.2f} dB')
 
-        # # NIQE
-        # imp, before, after = compute_niqe_improvement(original_image, enhanced_image)
-        # print(f"NIQE: {imp}% (from {before} to {after})")
-
         # # BRISQUE
         # imp, before, after = compute_brisque_improvement(original_image, enhanced_image)
         # print(f"BRISQUE: {imp}% (from {before} to {after})")
@@ -131,7 +128,7 @@ def process_image(image_path, model, device, output_folder):
         # imp, before, after = compute_piqe_improvement(original_image, enhanced_image)
         # print(f"PIQE: {imp}% (from {before} to {after})")
 
-        # NIQE
+        # NIQE down
         original_image = cv2.imread(image_path)
         enhanced_image = cv2.imread(enhanced_image_path)
         niqe_value_original = calculate_niqe(original_image, crop_border=0, input_order='HWC', convert_to='y')
@@ -141,17 +138,8 @@ def process_image(image_path, model, device, output_folder):
         print(f'NIQE Improvement: {(niqe_value_original - niqe_value_enhanced) / niqe_value_original:.2f}')
 
 
-        # niqe_value_2 = calculate_niqe_2(enhanced_image_path)
-        # print(f'NIQE 2 (Enhanced): {niqe_value_2:.2f}')
-
-
-
-        # print(f"NIQE: {imp}% (from {before} to {after})")
-
-
     except Exception as error:
         print('Error', error, imgname)
-
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-input_path: D:/Resource/Picture/ya/ya.png
+input_path: D:/Resource/Picture/grisaia/49.png
 model_path: D:/gracode/sr_models/Pic/ESRGAN/ESRGAN_SRx4_DF2KOST_official-ff704c30.pth
 output_folder: D:/gracode/sr_results/11
 selected_model: ESRGAN
