@@ -111,31 +111,31 @@ def process_image(image_path, model, device, output_folder):
         cv2.imwrite(os.path.join(output_folder, f'{imgname}_ESRGAN.png'), output)
         print('save:', imgname + '_ESRGAN.png')
 
-        # enhanced image
-        enhanced_image_path = os.path.join(output_folder, f'{imgname}_ESRGAN.png').replace(os.sep, '/')
+        # # enhanced image
+        # enhanced_image_path = os.path.join(output_folder, f'{imgname}_ESRGAN.png').replace(os.sep, '/')
 
-        # calculate PSNR
-        original_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        enhanced_image = cv2.imread(enhanced_image_path, cv2.IMREAD_COLOR)
-        psnr_enhanced = calculate_psnr(original_image, enhanced_image)  # 增强图片的 PSNR
-        print(f'PSNR (Enhanced): {psnr_enhanced:.2f} dB')
+        # # calculate PSNR
+        # original_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        # enhanced_image = cv2.imread(enhanced_image_path, cv2.IMREAD_COLOR)
+        # psnr_enhanced = calculate_psnr(original_image, enhanced_image)  # 增强图片的 PSNR
+        # print(f'PSNR (Enhanced): {psnr_enhanced:.2f} dB')
 
-        # # BRISQUE
-        # imp, before, after = compute_brisque_improvement(original_image, enhanced_image)
-        # print(f"BRISQUE: {imp}% (from {before} to {after})")
+        # # # BRISQUE
+        # # imp, before, after = compute_brisque_improvement(original_image, enhanced_image)
+        # # print(f"BRISQUE: {imp}% (from {before} to {after})")
 
-        # # PIQE
-        # imp, before, after = compute_piqe_improvement(original_image, enhanced_image)
-        # print(f"PIQE: {imp}% (from {before} to {after})")
+        # # # PIQE
+        # # imp, before, after = compute_piqe_improvement(original_image, enhanced_image)
+        # # print(f"PIQE: {imp}% (from {before} to {after})")
 
-        # NIQE down
-        original_image = cv2.imread(image_path)
-        enhanced_image = cv2.imread(enhanced_image_path)
-        niqe_value_original = calculate_niqe(original_image, crop_border=0, input_order='HWC', convert_to='y')
-        niqe_value_enhanced = calculate_niqe(enhanced_image, crop_border=0, input_order='HWC', convert_to='y')
-        print(f'NIQE (Original): {niqe_value_original:.2f}')
-        print(f'NIQE (Enhanced): {niqe_value_enhanced:.2f}')
-        print(f'NIQE Improvement: {(niqe_value_original - niqe_value_enhanced) / niqe_value_original:.2f}')
+        # # NIQE down
+        # original_image = cv2.imread(image_path)
+        # enhanced_image = cv2.imread(enhanced_image_path)
+        # niqe_value_original = calculate_niqe(original_image, crop_border=0, input_order='HWC', convert_to='y')
+        # niqe_value_enhanced = calculate_niqe(enhanced_image, crop_border=0, input_order='HWC', convert_to='y')
+        # print(f'NIQE (Original): {niqe_value_original:.2f}')
+        # print(f'NIQE (Enhanced): {niqe_value_enhanced:.2f}')
+        # print(f'NIQE Improvement: {(niqe_value_original - niqe_value_enhanced) / niqe_value_original:.2f}')
 
 
     except Exception as error:

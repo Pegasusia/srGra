@@ -15,6 +15,7 @@ from PIL import Image  # 添加导入，用于读取图像的真实分辨率
 import multiprocessing  # 用于多进程处理
 
 from inference_process import run_inference_process  # 导入推理函数
+from display_img import ImageComparisonWindow  # 导入图像对比窗口类
 
 # 信号类，用于线程间通信
 class LogSignal(QObject):
@@ -239,12 +240,20 @@ class InferenceGUI(QMainWindow):
                 return False
         return True
 
-    def show_warning(self):
+    def show_warning_chinese(self):
         # 弹出警告框，提示用户路径包含中文字符
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("路径检查警告")
-        msg.setText("配置文件中的路径包含中文字符，请使用仅包含英文的路径。")
+        msg.setText("路径包含中文字符，请使用仅包含英文的路径")
+        msg.exec_()
+
+    def show_warning_path(self):
+        # 无效路径
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("路径检查警告")
+        msg.setText("请检查路径是否存在")
         msg.exec_()
 
     def select_input_path(self):
@@ -291,11 +300,11 @@ class InferenceGUI(QMainWindow):
         # 检查路径
         if self.check_path(config_data):
             # 在路径有效的情况下，继续推理（假设这里有进一步的代码）
-            print("路径有效，开始推理...")
+            print("英文路径...")
         else:
             # 弹出警告框，路径包含中文字符
-            self.show_warning()
-            return 
+            self.show_warning_chinese()
+            return
 
         # 清空日志窗口
         self.log_text.clear()
@@ -310,18 +319,23 @@ class InferenceGUI(QMainWindow):
         # 检查路径是否有效
         if self.file_radio.isChecked() and not os.path.isfile(input_path):
             self.log_message("ERROR", "无效的输入路径.")
+            self.show_warning_path()
             return
         if self.folder_radio.isChecked() and not os.path.isdir(input_path):
             self.log_message("ERROR", "无效的输入文件夹.")
+            self.show_warning_path()
             return
         if self.video_radio.isChecked() and not os.path.isfile(input_path):
             self.log_message("ERROR", "无效的视频文件.")
+            self.show_warning_path()
             return
         if not os.path.isfile(model_path):
             self.log_message("ERROR", "无效的模型路径.")
+            self.show_warning_path()
             return
         if not os.path.isdir(output_folder):
             self.log_message("ERROR", "无效的输出路径.")
+            self.show_warning_path()
             return
 
         # 禁用按钮以防止重复点击
@@ -413,7 +427,7 @@ class InferenceGUI(QMainWindow):
             ]
             input_image_path = input_path
             output_image_path = os.path.join(output_folder,
-                                             f"{os.path.splitext(os.path.basename(input_path))[0]}{output_suffix}")
+                                             f"{os.path.splitext(os.path.basename(input_path))[0]}{output_suffix}").replace(os.sep, '/')
         elif self.folder_radio.isChecked():
             # 文件夹模式
             command = [
@@ -426,7 +440,7 @@ class InferenceGUI(QMainWindow):
                 first_input_image = input_files[0]
                 input_image_path = os.path.join(input_path, first_input_image)
                 first_output_image = f"{os.path.splitext(first_input_image)[0]}{output_suffix}"
-                output_image_path = os.path.join(output_folder, first_output_image)
+                output_image_path = os.path.join(output_folder, first_output_image).replace(os.sep, '/')
 
         elif self.video_radio.isChecked():
             # 视频模式
@@ -436,7 +450,7 @@ class InferenceGUI(QMainWindow):
             ]
             input_image_path = input_path
             output_image_path = os.path.join(output_folder,
-                                            f"{os.path.splitext(os.path.basename(input_path))[0]}{output_suffix}")
+                                            f"{os.path.splitext(os.path.basename(input_path))[0]}{output_suffix}").replace(os.sep, '/')
 
 
         try:
@@ -482,31 +496,36 @@ class InferenceGUI(QMainWindow):
             self.stop_button.setEnabled(False)
             self.process = None
 
+    # def display_images(self, input_image_path, output_image_path):
+    #     """显示输入图像和生成图像，并显示图像信息"""
+    #     # 显示输入图像
+    #     input_pixmap = QPixmap(input_image_path)
+    #     input_pixmap = input_pixmap.scaled(self.input_image_label.width(), self.input_image_label.height())
+    #     self.input_image_label.setPixmap(input_pixmap)
+
+    #     # 获取输入图像的真实分辨率
+    #     with Image.open(input_image_path) as img:
+    #         input_width, input_height = img.size
+    #         # input_data = list(img.getdata())  # 获取输入图像的像素数据
+    #     input_size = os.path.getsize(input_image_path) / 1024  # 文件大小 (KB)
+    #     self.input_image_info.setText(f"输入图片信息: {input_width}x{input_height}, {input_size:.2f} KB")
+
+    #     # 显示生成图像
+    #     output_pixmap = QPixmap(output_image_path)
+    #     output_pixmap = output_pixmap.scaled(self.output_image_label.width(), self.output_image_label.height())
+    #     self.output_image_label.setPixmap(output_pixmap)
+
+    #     # 获取生成图像的真实分辨率
+    #     with Image.open(output_image_path) as img:
+    #         output_width, output_height = img.size
+    #         # output_data = list(img.getdata())  # 获取输出图像的像素数据
+    #     output_size = os.path.getsize(output_image_path) / 1024  # 文件大小 (KB)
+    #     self.output_image_info.setText(f"分辨率提升后的图片信息: {output_width}x{output_height}, {output_size:.2f} KB")
+
     def display_images(self, input_image_path, output_image_path):
-        """显示输入图像和生成图像，并显示图像信息"""
-        # 显示输入图像
-        input_pixmap = QPixmap(input_image_path)
-        input_pixmap = input_pixmap.scaled(self.input_image_label.width(), self.input_image_label.height())
-        self.input_image_label.setPixmap(input_pixmap)
-
-        # 获取输入图像的真实分辨率
-        with Image.open(input_image_path) as img:
-            input_width, input_height = img.size
-            # input_data = list(img.getdata())  # 获取输入图像的像素数据
-        input_size = os.path.getsize(input_image_path) / 1024  # 文件大小 (KB)
-        self.input_image_info.setText(f"输入图片信息: {input_width}x{input_height}, {input_size:.2f} KB")
-
-        # 显示生成图像
-        output_pixmap = QPixmap(output_image_path)
-        output_pixmap = output_pixmap.scaled(self.output_image_label.width(), self.output_image_label.height())
-        self.output_image_label.setPixmap(output_pixmap)
-
-        # 获取生成图像的真实分辨率
-        with Image.open(output_image_path) as img:
-            output_width, output_height = img.size
-            # output_data = list(img.getdata())  # 获取输出图像的像素数据
-        output_size = os.path.getsize(output_image_path) / 1024  # 文件大小 (KB)
-        self.output_image_info.setText(f"分辨率提升后的图片信息: {output_width}x{output_height}, {output_size:.2f} KB")
+        """弹出独立窗口显示输入图像和生成图像的对比信息"""
+        comparison_window = ImageComparisonWindow(input_image_path, output_image_path, self)
+        comparison_window.exec_()  # 模态显示窗口
 
 
     def open_output_folder(self, folder_path):
