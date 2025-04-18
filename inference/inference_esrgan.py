@@ -1,5 +1,4 @@
 import argparse
-from turtle import end_fill
 import cv2
 import glob
 import numpy as np
@@ -7,7 +6,13 @@ import os
 import torch
 import time
 
+from tqdm import tqdm
+from inference_esrgan_up import *
+
 from basicsr.archs.rrdbnet_arch import RRDBNet
+from basicsr.metrics.niqe import calculate_niqe
+# from inference_niqe import calculate_niqe_2
+
 
 import sys
 
@@ -25,11 +30,11 @@ def main():
         '--model_path',
         type=str,
         default=  # noqa: E251
-        r'D:\gracode\srGra\models\Pic\004_MSRGAN_x4\models\net_d_400000.pth'  # noqa: E501
+        r'D:\gracode\sr_models\Pic\ESRGAN\ESRGAN_PSNR_SRx4_DF2K_official-150ff491.pth'  # noqa: E501
     )
-    parser.add_argument('--input', type=str, default= None, help='input image folder')
-    parser.add_argument('--input_file', type=str, default= None, help='input single image file')
-    parser.add_argument('--output', type=str, default='results/ESRGAN', help='output folder')
+    parser.add_argument('--input', type=str, default=None, help='input image folder')
+    parser.add_argument('--input_file', type=str, default=r'D:\Resource\Picture\ya\ya.png', help='input single image file')
+    parser.add_argument('--output', type=str, default= r'D:\gracode\sr_results\11', help='output folder')
     args = parser.parse_args()
 
     print("Load model done...")
@@ -89,7 +94,7 @@ def process_image(image_path, model, device, output_folder):
     imgname = os.path.splitext(os.path.basename(image_path))[0]
     print('Processing: ', imgname)
     try:
-        # read image
+        # OpenCV
         img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype(np.float32) / 255.
         img = torch.from_numpy(np.transpose(img[:, :, [2, 1, 0]], (2, 0, 1))).float()
         img = img.unsqueeze(0).to(device)
@@ -103,10 +108,51 @@ def process_image(image_path, model, device, output_folder):
         output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))
         output = (output * 255.0).round().astype(np.uint8)
         cv2.imwrite(os.path.join(output_folder, f'{imgname}_ESRGAN.png'), output)
-        print('save:', imgname+'_ESRGAN.png')
+        print('save:', imgname + '_ESRGAN.png')
+
+        # enhanced image
+        enhanced_image_path = os.path.join(output_folder, f'{imgname}_ESRGAN.png').replace(os.sep, '/')
+
+        # calculate PSNR
+        original_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        enhanced_image = cv2.imread(enhanced_image_path, cv2.IMREAD_COLOR)
+        psnr_enhanced = calculate_psnr(original_image, enhanced_image)  # 增强图片的 PSNR
+        print(f'PSNR (Enhanced): {psnr_enhanced:.2f} dB')
+
+        # # NIQE
+        # imp, before, after = compute_niqe_improvement(original_image, enhanced_image)
+        # print(f"NIQE: {imp}% (from {before} to {after})")
+
+        # # BRISQUE
+        # imp, before, after = compute_brisque_improvement(original_image, enhanced_image)
+        # print(f"BRISQUE: {imp}% (from {before} to {after})")
+
+        # # PIQE
+        # imp, before, after = compute_piqe_improvement(original_image, enhanced_image)
+        # print(f"PIQE: {imp}% (from {before} to {after})")
+
+        # NIQE
+        original_image = cv2.imread(image_path)
+        enhanced_image = cv2.imread(enhanced_image_path)
+        niqe_value_original = calculate_niqe(original_image, crop_border=0, input_order='HWC', convert_to='y')
+        niqe_value_enhanced = calculate_niqe(enhanced_image, crop_border=0, input_order='HWC', convert_to='y')
+        print(f'NIQE (Original): {niqe_value_original:.2f}')
+        print(f'NIQE (Enhanced): {niqe_value_enhanced:.2f}')
+        print(f'NIQE Improvement: {(niqe_value_original - niqe_value_enhanced) / niqe_value_original:.2f}')
+
+
+        # niqe_value_2 = calculate_niqe_2(enhanced_image_path)
+        # print(f'NIQE 2 (Enhanced): {niqe_value_2:.2f}')
+
+
+
+        # print(f"NIQE: {imp}% (from {before} to {after})")
+
 
     except Exception as error:
         print('Error', error, imgname)
+
+
 
 if __name__ == '__main__':
     main()

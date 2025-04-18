@@ -3,10 +3,11 @@ import os
 import threading
 import subprocess
 import yaml  # 用于处理 YAML 文件
-# import math
+import re  # 用于正则表达式匹配
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QPushButton, QTextEdit, QComboBox)
-from PyQt5.QtWidgets import (QWidget, QFileDialog, QLabel, QLineEdit, QHBoxLayout, QRadioButton, QButtonGroup, QAction)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QPushButton, QTextEdit)
+from PyQt5.QtWidgets import (QWidget, QFileDialog, QLabel, QLineEdit,QComboBox)
+from PyQt5.QtWidgets import ( QHBoxLayout, QRadioButton, QButtonGroup, QAction, QMessageBox)
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtGui import QPixmap
 
@@ -214,6 +215,38 @@ class InferenceGUI(QMainWindow):
         except Exception as e:
             self.log_message("ERROR", f"保存配置文件发生错误: {str(e)}")
 
+    def read_config(self):
+        # 读取YAML配置文件并返回数据
+        try:
+            with open(self.CONFIG_FILE, 'r', encoding='utf-8') as f:
+                config_data = yaml.load(f, Loader=yaml.FullLoader)
+            return config_data
+        except Exception as e:
+            print(f"读取配置文件时出错: {e}")
+            return {}
+
+    def check_path(self, config_data):
+        # 获取路径信息
+        paths = [
+            config_data.get("input_path", ""),
+            config_data.get("model_path", ""),
+            config_data.get("output_folder", "")
+        ]
+
+        # 使用正则表达式检查路径是否包含中文字符
+        for path in paths:
+            if re.search(r'[\u4e00-\u9fff]', path):
+                return False
+        return True
+
+    def show_warning(self):
+        # 弹出警告框，提示用户路径包含中文字符
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("路径检查警告")
+        msg.setText("配置文件中的路径包含中文字符，请使用仅包含英文的路径。")
+        msg.exec_()
+
     def select_input_path(self):
         if self.file_radio.isChecked():
             # 选择单个文件
@@ -251,6 +284,18 @@ class InferenceGUI(QMainWindow):
 
     def start_inference(self):
         """开始推理"""
+
+        # 读取配置文件
+        config_data = self.read_config()
+
+        # 检查路径
+        if self.check_path(config_data):
+            # 在路径有效的情况下，继续推理（假设这里有进一步的代码）
+            print("路径有效，开始推理...")
+        else:
+            # 弹出警告框，路径包含中文字符
+            self.show_warning()
+            return 
 
         # 清空日志窗口
         self.log_text.clear()
@@ -478,74 +523,6 @@ class InferenceGUI(QMainWindow):
         self.log_text.append(message)
         self.log_text.ensureCursorVisible()  # 确保滚动到最新日志
 
-
-# def run_inference_process(input_path, model_path, output_folder, selected_model, log_queue):
-#     """独立的推理函数，用于多进程调用"""
-
-#     # log_queue.put(f"开始推理: {input_path}, 模型: {model_path}, 输出: {output_folder}, 网络: {selected_model}")
-
-#     # 根据模型选择推理脚本
-#     if selected_model == "ESRGAN":
-#         script_name = "inference/inference_esrgan.py"
-#     elif selected_model == "EDSR":
-#         script_name = "inference/inference_edsr.py"
-#     elif selected_model == "BasicVSR":
-#         script_name = "inference/inference_basicvsr.py"
-#     else:
-#         log_queue.put("[ERROR] 未知的神经网络模型选择.")
-#         return
-
-#     # 构建命令
-#     command = [
-#         "python", script_name, "--input_path", input_path, "--model_path", model_path, "--save_path", output_folder
-#     ]
-
-#     # 执行推理脚本
-#     try:
-#         process = subprocess.Popen(
-#             command,
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             text=True,
-#             universal_newlines=True,
-#             bufsize=1,
-#             env={
-#                 **os.environ, "PYTHONUNBUFFERED": "1"
-#             }  # 禁用缓冲
-#         )
-
-#         def read_stream(stream, log_level):
-#             """读取子进程的输出流并发送到日志队列"""
-#             for line in iter(stream.readline, ""):
-#                 log_queue.put(f"{line.strip()}")
-#             stream.close()
-
-#         # 创建线程读取 stdout 和 stderr
-#         stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, "INFO"))
-#         stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, "ERROR"))
-#         stdout_thread.start()
-#         stderr_thread.start()
-
-#         # 等待子进程完成
-#         process.wait()
-#         stdout_thread.join()
-#         stderr_thread.join()
-
-#         if process.returncode == 0:
-#             log_queue.put("[SUCCESS] 视频分辨率重建成功!\n")
-
-#             # 自动打开输出文件夹
-#             if os.name == "nt":  # Windows
-#                 os.startfile(output_folder)
-#             elif os.name == "posix":
-#                 # macOS 或 Linux
-#                 subprocess.Popen(["open", output_folder])
-#             else:
-#                 self.log_message("ERROR", "无法打开输出文件夹，请手动检查路径。")
-#         else:
-#             log_queue.put(f"[ERROR] 推理失败，返回代码：{process.returncode}")
-#     except Exception as e:
-#         log_queue.put(f"[ERROR] 推理过程中发生错误：{str(e)}")
 
 # 主程序入口
 if __name__ == "__main__":

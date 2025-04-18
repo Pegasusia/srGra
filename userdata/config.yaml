@@ -1,4 +1,4 @@
-input_path: D:/gracode/video/video_12f.mp4
-model_path: D:/gracode/models/Video/BasicVSR/BasicVSR_REDS4.pth
-output_folder: D:/gracode/results/1111
-selected_model: BasicVSR
+input_path: D:/Resource/Picture/ya/ya.png
+model_path: D:/gracode/sr_models/Pic/ESRGAN/ESRGAN_SRx4_DF2KOST_official-ff704c30.pth
+output_folder: D:/gracode/sr_results/11
+selected_model: ESRGAN

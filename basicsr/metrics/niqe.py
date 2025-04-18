@@ -1,3 +1,4 @@
+from tkinter.messagebox import NO
 import cv2
 import math
 import numpy as np
@@ -100,6 +101,12 @@ def niqe(img, mu_pris_param, cov_pris_param, gaussian_window, block_size_h=96, b
     h, w = img.shape
     num_block_h = math.floor(h / block_size_h)
     num_block_w = math.floor(w / block_size_w)
+
+    # 检查图像尺寸是否足够分块
+    if num_block_h == 0 or num_block_w == 0:
+        raise ValueError(f"Image size ({h}x{w}) is too small for block size ({block_size_h}x{block_size_w}).")
+
+
     img = img[0:num_block_h * block_size_h, 0:num_block_w * block_size_w]
 
     distparam = []  # dist param is actually the multiscale features
@@ -119,7 +126,14 @@ def niqe(img, mu_pris_param, cov_pris_param, gaussian_window, block_size_h=96, b
 
         distparam.append(np.array(feat))
 
+        # if scale == 1:
+        #     img = imresize(img / 255., scale=0.5, antialiasing=True)
+        #     img = img * 255.
+
         if scale == 1:
+            # 检查输入是否为空
+            if img is None or img.size == 0:
+                raise ValueError("Image is empty before resizing. Check the input image and processing steps.")
             img = imresize(img / 255., scale=0.5, antialiasing=True)
             img = img * 255.
 
@@ -179,6 +193,12 @@ def calculate_niqe(img, crop_border, input_order='HWC', convert_to='y', **kwargs
     cov_pris_param = niqe_pris_params['cov_pris_param']
     gaussian_window = niqe_pris_params['gaussian_window']
 
+
+    if img is None or img.size == 0:
+        raise ValueError('Input image is None or empty.')
+
+    print('img.shape:', img.shape)
+
     img = img.astype(np.float32)
     if input_order != 'HW':
         img = reorder_image(img, input_order=input_order)
@@ -187,6 +207,9 @@ def calculate_niqe(img, crop_border, input_order='HWC', convert_to='y', **kwargs
         elif convert_to == 'gray':
             img = cv2.cvtColor(img / 255., cv2.COLOR_BGR2GRAY) * 255.
         img = np.squeeze(img)
+
+    if img is None or img.size == 0:
+        raise ValueError('Input image is None or empty.')
 
     if crop_border != 0:
         img = img[crop_border:-crop_border, crop_border:-crop_border]

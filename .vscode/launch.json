@@ -51,12 +51,12 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "--input_path",
-                "D:/gracode/video/video_12f.mp4",
-                "--model_path",
-                "D:/gracode/models/Video/BasicVSR/BasicVSR_REDS4.pth",
-                "--save_path",
-                "D:/gracode/results/5"
+                // "--input_path",
+                // "D:/gracode/video/video_12f.mp4",
+                // "--model_path",
+                // "D:/gracode/models/Video/BasicVSR/BasicVSR_REDS4.pth",
+                // "--save_path",
+                // "D:/gracode/results/5"
             ]
         }
     ]
