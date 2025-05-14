@@ -112,8 +112,12 @@ def main():
     model_path = r"D:\gracode\sr_models\Video\DUF\DUF_x2_16L.pth"
     input_video_path = r"D:\gracode\sr_data\video\video_12f.mp4"
     output_folder = r"D:\gracode\sr_results\duf_fixed2_gai"
+
+
     scale = 2
     num_layer = 16
+    
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     model = load_model(model_path, scale=scale, num_layer=num_layer, device=device)
