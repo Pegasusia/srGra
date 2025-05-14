@@ -43,9 +43,11 @@ def main():
 
     # parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default=None, help='model path')
-    parser.add_argument('--input_path', type=str, default=None, help='input test image folder or video file')
-    parser.add_argument('--save_path', type=str, default='results/BasicVSR', help='save image path')
+    parser.add_argument(
+        '--model_path', type=str, default=r"D:\gracode\sr_models\Video\BasicVSR\BasicVSR_REDS4.pth", help='model path')
+    parser.add_argument(
+        '--input_path', type=str, default=r"D:\gracode\sr_data\video\video_12f.mp4", help='input test image folder or video file')
+    parser.add_argument('--save_path', type=str, default=r"D:\gracode\sr_results\basicsr", help='save image path')
     parser.add_argument('--interval', type=int, default=30, help='interval size')
     args = parser.parse_args()
 
