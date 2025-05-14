@@ -34,11 +34,14 @@ def main():
     )
     parser.add_argument('--input', type=str, default=None, help='input image folder')
     parser.add_argument(
-        '--input_file', type=str, default=r'D:\Resource\Picture\ya\ya.png', help='input single image file')
-    parser.add_argument('--output', type=str, default=r'D:\gracode\sr_results\11', help='output folder')
+        '--input_file',
+        type=str,
+        default=r'D:\gracode\sr_data\pic\Set5\image_SRF_2\LR\img_002.png',
+        help='input single image file')
+    parser.add_argument('--output', type=str, default=r'D:\gracode\sr_results\33', help='output folder')
     args = parser.parse_args()
 
-    print("Load model done...")
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # set up model
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32)
@@ -47,6 +50,8 @@ def main():
 
     model.eval()
     model = model.to(device)
+    print("Load model done...")
+
 
     print("start...")
     os.makedirs(args.output, exist_ok=True)

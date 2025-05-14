@@ -111,7 +111,6 @@ def train_pipeline(root_path):
     # logger = get_root_logger(logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
     # logger.info("Starting training pipeline...")
 
-
     torch.backends.cudnn.benchmark = True
     # torch.backends.cudnn.deterministic = True
 

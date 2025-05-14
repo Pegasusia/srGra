@@ -45,6 +45,7 @@ class EDSR(nn.Module):
         self.body = make_layer(ResidualBlockNoBN, num_block, num_feat=num_feat, res_scale=res_scale, pytorch_init=True)
         self.conv_after_body = nn.Conv2d(num_feat, num_feat, 3, 1, 1)
         self.upsample = Upsample(upscale, num_feat)
+        # self.upsample = nn.Sequential(nn.Conv2d(num_feat, 4 * num_feat, 3, 1, 1), nn.PixelShuffle(2))
         self.conv_last = nn.Conv2d(num_feat, num_out_ch, 3, 1, 1)
 
     def forward(self, x):

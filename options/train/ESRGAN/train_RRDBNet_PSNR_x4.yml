@@ -1,5 +1,5 @@
 # general settings
-name: 051_RRDBNet_PSNR_x4_f64b23_DIV2K_1000k_B16G1_wandb
+name: ESRGAN_train
 model_type: SRModel
 scale: 4
 num_gpu: 1  # set num_gpu: 0 for cpu mode

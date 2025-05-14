@@ -496,36 +496,36 @@ class InferenceGUI(QMainWindow):
             self.stop_button.setEnabled(False)
             self.process = None
 
-    # def display_images(self, input_image_path, output_image_path):
-    #     """显示输入图像和生成图像，并显示图像信息"""
-    #     # 显示输入图像
-    #     input_pixmap = QPixmap(input_image_path)
-    #     input_pixmap = input_pixmap.scaled(self.input_image_label.width(), self.input_image_label.height())
-    #     self.input_image_label.setPixmap(input_pixmap)
-
-    #     # 获取输入图像的真实分辨率
-    #     with Image.open(input_image_path) as img:
-    #         input_width, input_height = img.size
-    #         # input_data = list(img.getdata())  # 获取输入图像的像素数据
-    #     input_size = os.path.getsize(input_image_path) / 1024  # 文件大小 (KB)
-    #     self.input_image_info.setText(f"输入图片信息: {input_width}x{input_height}, {input_size:.2f} KB")
-
-    #     # 显示生成图像
-    #     output_pixmap = QPixmap(output_image_path)
-    #     output_pixmap = output_pixmap.scaled(self.output_image_label.width(), self.output_image_label.height())
-    #     self.output_image_label.setPixmap(output_pixmap)
-
-    #     # 获取生成图像的真实分辨率
-    #     with Image.open(output_image_path) as img:
-    #         output_width, output_height = img.size
-    #         # output_data = list(img.getdata())  # 获取输出图像的像素数据
-    #     output_size = os.path.getsize(output_image_path) / 1024  # 文件大小 (KB)
-    #     self.output_image_info.setText(f"分辨率提升后的图片信息: {output_width}x{output_height}, {output_size:.2f} KB")
-
     def display_images(self, input_image_path, output_image_path):
-        """弹出独立窗口显示输入图像和生成图像的对比信息"""
-        comparison_window = ImageComparisonWindow(input_image_path, output_image_path, self)
-        comparison_window.exec_()  # 模态显示窗口
+        """显示输入图像和生成图像，并显示图像信息"""
+        # 显示输入图像
+        input_pixmap = QPixmap(input_image_path)
+        input_pixmap = input_pixmap.scaled(self.input_image_label.width(), self.input_image_label.height())
+        self.input_image_label.setPixmap(input_pixmap)
+
+        # 获取输入图像的真实分辨率
+        with Image.open(input_image_path) as img:
+            input_width, input_height = img.size
+            # input_data = list(img.getdata())  # 获取输入图像的像素数据
+        input_size = os.path.getsize(input_image_path) / 1024  # 文件大小 (KB)
+        self.input_image_info.setText(f"输入图片信息: {input_width}x{input_height}, {input_size:.2f} KB")
+
+        # 显示生成图像
+        output_pixmap = QPixmap(output_image_path)
+        output_pixmap = output_pixmap.scaled(self.output_image_label.width(), self.output_image_label.height())
+        self.output_image_label.setPixmap(output_pixmap)
+
+        # 获取生成图像的真实分辨率
+        with Image.open(output_image_path) as img:
+            output_width, output_height = img.size
+            # output_data = list(img.getdata())  # 获取输出图像的像素数据
+        output_size = os.path.getsize(output_image_path) / 1024  # 文件大小 (KB)
+        self.output_image_info.setText(f"分辨率提升后的图片信息: {output_width}x{output_height}, {output_size:.2f} KB")
+
+    # def display_images(self, input_image_path, output_image_path):
+    #     """弹出独立窗口显示输入图像和生成图像的对比信息"""
+    #     comparison_window = ImageComparisonWindow(input_image_path, output_image_path, self)
+    #     comparison_window.exec_()  # 模态显示窗口
 
 
     def open_output_folder(self, folder_path):

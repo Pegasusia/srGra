@@ -37,11 +37,11 @@
             "console": "integratedTerminal",
             "args": [
                 "--input_file",
-                "D:\\Resource\\Picture\\Logo\\00.png",
-                "--model_path",
-                "D:/gracode/srGra/models/Pic/004_MSRGAN_x4/models/net_g_400000.pth",
-                "--output",
-                "results\\ESRGAN"
+                "D:\\gracode\\sr_data\\pic\\Set5\\image_SRF_2\\LR\\img_001.png",
+                // "--model_path",
+                // "D:/gracode/srGra/models/Pic/004_MSRGAN_x4/models/net_g_400000.pth",
+                // "--output",
+                // "results\\ESRGAN"
             ]
         },
         {

@@ -24,27 +24,40 @@ def main():
     parser.add_argument(
         '--model_path',
         type=str,
-        default=
-        r'D:\gracode\srGra\models\Pic\EDSR\EDSR_Lx4_f256b32_DIV2K_official-76ee1c8f.pth',  # Replace with your EDSR model path
+        default=r'D:\gracode\sr_models\Pic\EDSR\EDSR_Mx4_f64b16.pth',
         help='Path to the pretrained EDSR model')
     parser.add_argument('--input', type=str, default=None, help='Input image folder')
-    parser.add_argument('--input_file', type=str, default=None, help='Input single image file')
-    parser.add_argument('--output', type=str, default='results/EDSR', help='Output folder')
+    parser.add_argument('--input_file', type=str, default=r"D:\gracode\sr_data\pic\Set5\image_SRF_2\LR\img_002.png", help='Input single image file')
+    parser.add_argument('--output', type=str, default=r'D:\gracode\sr_results\edsr', help='Output folder')
     args = parser.parse_args()
 
     print("Load model done...")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Set up model
-    model = EDSR(num_in_ch=3, num_out_ch=3, num_feat=256, num_block=32, upscale=4)
+    model = EDSR(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=16, upscale=4)
     # model.load_state_dict(torch.load(args.model_path)['params'], strict=False)
     # model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu')), strict=False)
-    model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu'))['params'], strict=False)
+
+    model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu'))['params'], strict=True)
 
     model.eval()
     model = model.to(device)
 
     print("Start...")
     os.makedirs(args.output, exist_ok=True)
+
+    print(model)
+
+    # 模型载入正确
+    # state_dict = torch.load(args.model_path, map_location=device)
+    # if 'params' in state_dict:
+    #     state_dict = state_dict['params']
+
+    # missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+
+    # print('Missing keys:', missing_keys)
+    # print('Unexpected keys:', unexpected_keys)
+
 
     if args.input_file:
         # Process a single image
@@ -80,8 +93,7 @@ def process_image(image_path, model, device, output_folder):
     imgname = os.path.splitext(os.path.basename(image_path))[0]
     print('Processing: ', imgname)
     try:
-        # Read image
-        img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype(np.float32) / 255.
+        img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype(np.float32) / 255.0
         img = torch.from_numpy(np.transpose(img[:, :, [2, 1, 0]], (2, 0, 1))).float()
         img = img.unsqueeze(0).to(device)
 
@@ -98,6 +110,7 @@ def process_image(image_path, model, device, output_folder):
 
     except Exception as error:
         print('Error', error, imgname)
+
 
 
 if __name__ == '__main__':
