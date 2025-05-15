@@ -3,9 +3,6 @@ import yaml
 
 
 class ConfigManager:
-    """配置管理器，负责加载和保存配置文件"""
-
-    # 配置文件路径
     CONFIG_FILE = "./userdata/config.yaml"
 
     @staticmethod

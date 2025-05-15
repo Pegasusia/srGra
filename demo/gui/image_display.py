@@ -4,7 +4,6 @@ import os
 
 
 def display_images(gui, input_image_path, output_image_path):
-    """显示输入和输出图片"""
     pix_in = QPixmap(input_image_path).scaled(gui.input_image_label.size())
     gui.input_image_label.setPixmap(pix_in)
 

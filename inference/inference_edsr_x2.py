@@ -24,7 +24,7 @@ def main():
     parser.add_argument(
         '--model_path',
         type=str,
-        default=r'D:\gracode\sr_models\Pic\EDSR\EDSR_Mx4_f64b16.pth',
+        default=r'D:\gracode\sr_models\Pic\EDSR\EDSR_Mx2_f64b16.pth',
         help='Path to the pretrained EDSR model')
     parser.add_argument('--input', type=str, default=None, help='Input image folder')
     parser.add_argument('--input_file', type=str, default=r"D:\gracode\sr_data\pic\Set5\image_SRF_2\LR\img_002.png", help='Input single image file')
@@ -34,7 +34,7 @@ def main():
     print("Load model done...")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Set up model
-    model = EDSR(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=16, upscale=4)
+    model = EDSR(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=16, upscale=2)
     # model.load_state_dict(torch.load(args.model_path)['params'], strict=False)
     # model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu')), strict=False)
 
