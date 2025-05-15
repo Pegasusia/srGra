@@ -2,6 +2,9 @@ import os
 import torch
 import cv2
 import time
+import sys
+import argparse
+from pathlib import Path
 import numpy as np
 from basicsr.archs.duf_arch import DUF
 
@@ -85,6 +88,7 @@ def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4
     output_video_path = os.path.join(output_folder, "output_duf_fixed.mp4")
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fps = 25
+    total_frames = len(input_frames)
     video_writer = cv2.VideoWriter(output_video_path, fourcc, fps, (output_w, output_h))
 
     for i in range(len(input_frames)):
@@ -96,33 +100,69 @@ def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4
             output = model(input_tensor)
 
         output_img = postprocess_output(output, scale=scale, pad_h=pad_h, pad_w=pad_w, crop_margin=crop_margin)
-        frame_name = f"frame_{i:04d}.png"
+        frame_name = f"frame_{i:04d}_duf.png"
         cv2.imwrite(os.path.join(output_folder, frame_name), output_img)
         video_writer.write(output_img)
-        print(f"Processed and saved {frame_name}")
+        print(f"Processing {frame_name} ({(i+1)/total_frames * 100:.2f}%)")
+        # print(f'Processing: {idx + 1} / {total_images} ({(idx + 1) / total_images * 100:.2f}%)')
+
+    for filename in os.listdir(os.path.dirname(output_video_path)):
+        file_path = Path(os.path.dirname(output_video_path)) / filename
+        if os.path.isfile(file_path) and filename.endswith('_duf.png'):
+            os.remove(file_path)  # 删除所有临时图片
 
     video_writer.release()
     print(f"Full-resolution video saved to: {output_video_path}")
 
 
 def main():
-
+    # Refresh stdout in the console
+    sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1, encoding='utf-8')
     start_time = time.perf_counter()
 
-    model_path = r"D:\gracode\sr_models\Video\DUF\DUF_x2_16L.pth"
-    input_video_path = r"D:\gracode\sr_data\video\video_12f.mp4"
-    output_folder = r"D:\gracode\sr_results\duf_fixed2_gai"
+    # model_path = r"D:\gracode\sr_models\Video\DUF\DUF_x2_16L.pth"
+    # input_video_path = r"D:\gracode\sr_data\video\video_12f.mp4"
+    # output_folder = r"D:\gracode\sr_results\duf_fixed2_gai"
+    # scale = 2
+    # num_layer = 16
+
+    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # model = load_model(model_path, scale=scale, num_layer=num_layer, device=device)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--model_path',
+        type=str,
+        default=r"D:\gracode\sr_models\Video\DUF\DUF_x2_16L.pth",
+        help='Path to the pretrained DUF model')
+    parser.add_argument('--input_video_path', type=str, default=None, help='Input video file path')
+    parser.add_argument('--output', type=str, default=None, help='Output folder')
+    parser.add_argument('--scale', type=int, default=None, help='Scale factor for super-resolution')
+    args = parser.parse_args()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Set up model
+    if args.scale ==2 :
+        args.model_path = r'D:\gracode\sr_models\Video\DUF\DUF_x2_16L.pth'
+        num_layer = 16
+    elif args.scale == 3:
+        args.model_path = r'D:\gracode\sr_models\Video\DUF\DUF_x3_16L.pth'
+        num_layer = 16
+    elif args.scale == 4:
+        args.model_path = r'D:\gracode\sr_models\Video\DUF\DUF_x4_52L.pth'
+        num_layer = 52
+    else:
+        raise ValueError("无效的放大倍数")
 
 
-    scale = 2
-    num_layer = 16
-    
+    print(f"scale: {args.scale}")
+    model = load_model(args.model_path, scale=args.scale, num_layer=num_layer, device=device)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print("Load model done...")
+    print("Start...")
+    os.makedirs(args.output, exist_ok=True)
 
-    model = load_model(model_path, scale=scale, num_layer=num_layer, device=device)
-
-    cap = cv2.VideoCapture(input_video_path)
+    cap = cv2.VideoCapture(args.input_video_path)
     input_frames = []
     while True:
         ret, frame = cap.read()
@@ -134,9 +174,7 @@ def main():
     if len(input_frames) < 1:
         raise ValueError("视频帧为空")
 
-    duf_full_frame_inference(model, input_frames, device, output_folder, scale=scale)
-
-
+    duf_full_frame_inference(model, input_frames, device, args.output, scale=args.scale)
 
     end_time = time.perf_counter()
     print(f"Total time: {end_time - start_time:.6f} seconds")

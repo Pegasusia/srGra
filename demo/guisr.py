@@ -15,7 +15,7 @@ from PIL import Image  # 添加导入，用于读取图像的真实分辨率
 import multiprocessing  # 用于多进程处理
 
 from inference_process import run_inference_process  # 导入推理函数
-from display_img import ImageComparisonWindow  # 导入图像对比窗口类
+# from display_img import ImageComparisonWindow  # 导入图像对比窗口类
 
 # 信号类，用于线程间通信
 class LogSignal(QObject):
@@ -481,7 +481,7 @@ class InferenceGUI(QMainWindow):
             self.process.wait()  # 等待进程结束
             if self.process.returncode == 0:
                 self.log_message("SUCCESS", "图片分辨率重建成功\n")
-                self.display_images(input_image_path, output_image_path)
+                # self.display_images(input_image_path, output_image_path)
                 self.open_output_folder(output_folder)
             else:
                 self.log_message("ERROR", f"Failed with return code {self.process.returncode}")

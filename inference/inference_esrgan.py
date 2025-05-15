@@ -20,27 +20,17 @@ def main():
     # refresh stdout in the console
     sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1, encoding='utf-8')
 
-
     start_time = time.perf_counter()
 
     print("ESRGAN...")
     print("Load model...")
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--model_path',
-        type=str,
-        default=  # noqa: E251
-        r'D:\gracode\sr_models\Pic\ESRGAN\ESRGAN_PSNR_SRx4_DF2K_official-150ff491.pth'  # noqa: E501
-    )
+    parser.add_argument('--model_path', type=str, default=None)
     parser.add_argument('--input', type=str, default=None, help='input image folder')
-    parser.add_argument(
-        '--input_file',
-        type=str,
-        default=r'D:\gracode\sr_data\pic\Set5\image_SRF_2\LR\img_002.png',
-        help='input single image file')
-    parser.add_argument('--output', type=str, default=r'D:\gracode\sr_results\33', help='output folder')
+    parser.add_argument('--input_file', type=str, default=None, help='input single image file')
+    parser.add_argument('--output', type=str, default=None, help='output folder')
+    parser.add_argument('--scale', type=int, default=None, help='scale factor for super-resolution')
     args = parser.parse_args()
-
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # set up model
@@ -50,8 +40,8 @@ def main():
 
     model.eval()
     model = model.to(device)
+    print(f"scale: {args.scale}")
     print("Load model done...")
-
 
     print("start...")
     os.makedirs(args.output, exist_ok=True)
@@ -141,7 +131,6 @@ def process_image(image_path, model, device, output_folder):
         # print(f'NIQE (Original): {niqe_value_original:.2f}')
         # print(f'NIQE (Enhanced): {niqe_value_enhanced:.2f}')
         # print(f'NIQE Improvement: {(niqe_value_original - niqe_value_enhanced) / niqe_value_original:.2f}')
-
 
     except Exception as error:
         print('Error', error, imgname)

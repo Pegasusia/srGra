@@ -3,6 +3,7 @@ import yaml
 
 
 class ConfigManager:
+    """加载和保存用户数据"""
     CONFIG_FILE = "./userdata/config.yaml"
 
     @staticmethod
