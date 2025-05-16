@@ -12,7 +12,7 @@ from logic.utils import (contains_chinese, show_warning_chinese, show_warning_pa
                          show_warning_file, open_output_folder)
 
 # from gui.image_display import display_images
-from gui.image_test import display_images
+from gui.image_display import display_images
 
 class InferenceGUI(QMainWindow):
     """图像超分辨率重建系统主窗口类"""
@@ -148,11 +148,9 @@ class InferenceGUI(QMainWindow):
         self.log_message("WELCOME", "点击开始推理按钮或键盘回车(ENTER)进行处理")
         self.log_message("WELCOME", "推理过程中请勿关闭窗口，推理完成后可查看输出结果。")
 
-
     def display_comparison_dialog(self, input_path, output_path):
+        """显示对比图像的对话框"""
         display_images(input_path, output_path)
-
-
 
     def keyPressEvent(self, event):
         """ESC退出程序"""
@@ -280,14 +278,23 @@ class InferenceGUI(QMainWindow):
                 self.start_button.setEnabled(True)
                 self.stop_button.setEnabled(False)
 
-                # 显示图片
-                image_name = os.path.splitext(os.path.basename(input_path))[0]
-                output_image_path = os.path.join(output_path, f"{image_name}_{model_type}.png").replace(os.sep, "/")
+                if input_type == 'image':
+                    # 显示图片
+                    image_name = os.path.splitext(os.path.basename(input_path))[0]
+                    output_image_path = os.path.join(output_path, f"{image_name}_{model_type}.png").replace(os.sep, "/")
+                    self.log_message("SUCCESS", f"展示对比图片")
+                    self.display_signal.emit(input_path, output_image_path)
 
-                # open_output_folder(output_path)
 
-                self.log_message("SUCCESS", f"展示对比图片")
-                self.display_signal.emit(input_path, output_image_path)
+                elif input_type == 'folder':
+                    """文件夹只对比第一张,视频只对比第一帧, 视频需要创建临时文件夹而不是output文件夹里的, 并且当用户点击取消之后, 需要删除临时文件夹"""
+                    # 打开输出文件夹
+                    self.log_message("SUCCESS", "打开输出文件夹")
+                    open_output_folder(output_path)
+                else:
+                    # 视频
+                    self.log_message("SUCCESS", "打开输出文件夹")
+                    open_output_folder(output_path)
 
             except Exception as e:
                 if self.process != None:

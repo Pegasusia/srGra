@@ -1,5 +1,6 @@
 import re
 import os
+import subprocess
 from PyQt5.QtWidgets import QMessageBox
 
 def get_model_info(input_type: str, scale: int):
@@ -34,13 +35,27 @@ def check_file_type(file_path):
         return 'folder'
 
 def open_output_folder(folder_path):
-        """自动打开输出文件夹"""
-        if os.name == "nt":  # Windows
-            os.startfile(folder_path)
-        elif os.name == "posix":  # macOS 或 Linux
-            subprocess.Popen(["open", folder_path])
-        else:
-            raise OSError("Unsupported operating system")
+    """自动打开输出文件夹"""
+    if os.name == "nt":  # Windows
+        os.startfile(folder_path)
+    elif os.name == "posix":  # macOS 或 Linux
+        subprocess.Popen(["open", folder_path])
+    else:
+        raise OSError("Unsupported operating system")
+
+
+def open_output_file(file_path):
+    """打开文件所在的文件夹，并选中该文件"""
+    if os.name == "nt":  # Windows
+        subprocess.run(["explorer", "/select,", os.path.normpath(file_path)])
+    elif sys.platform == "darwin":  # macOS
+        subprocess.run(["open", "-R", file_path])
+    elif sys.platform.startswith("linux"):
+        # Linux 不支持选中文件，只能打开目录
+        folder = os.path.dirname(file_path)
+        subprocess.run(["xdg-open", folder])
+    else:
+        raise OSError("Unsupported operating system")
 
 def contains_chinese(path):
     return bool(re.search(r'[\u4e00-\u9fff]', path))
