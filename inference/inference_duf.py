@@ -1,12 +1,20 @@
 import os
-import torch
+import sys
 import cv2
 import time
-import sys
+import torch
+import shutil
+import tempfile
 import argparse
-from pathlib import Path
 import numpy as np
+from tqdm import tqdm
+from pathlib import Path
 from basicsr.archs.duf_arch import DUF
+from PyQt5.QtWidgets import QApplication
+
+# Add the parent directory of 'demo' to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from demo.gui.image_display import display_images
 
 
 def load_model(model_path, scale=4, num_layer=52, device='cuda'):
@@ -34,6 +42,7 @@ def preprocess_frames(frames, device):
     frames = np.stack(frames, axis=0)  # (T, C, H, W)
     frames = torch.from_numpy(frames).unsqueeze(0).to(device)  # (1, T, C, H, W)
     return frames
+
 
 def postprocess_output(output, scale, pad_h, pad_w, crop_margin=4):
     """
@@ -65,10 +74,17 @@ def postprocess_output(output, scale, pad_h, pad_w, crop_margin=4):
 
     return output
 
-
-
 def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4):
-    os.makedirs(output_folder, exist_ok=True)
+    """使用 DUF 模型进行全帧推理并保存结果"""
+
+    if QApplication.instance() is None:
+        app = QApplication(sys.argv)
+
+
+    # 创建显式可见的临时目录
+    tmp_output = os.path.join(output_folder, "_temp_duf")
+    os.makedirs(tmp_output, exist_ok=True)
+
     window_size = model.num_frames if hasattr(model, 'num_frames') else 7
     center = window_size // 2
 
@@ -76,43 +92,60 @@ def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4
     pad_back = [input_frames[-1]] * center
     padded_frames = pad_front + input_frames + pad_back
 
-
-    crop_margin = 4  # 与 postprocess_output 中保持一致
-
-    # 预处理第一帧确定尺寸
+    # 裁剪边缘锯齿
+    crop_margin = 4
     padded_sample, pad_h, pad_w = pad_to_multiple_of(input_frames[0])
     h, w, _ = padded_sample.shape
     output_h = (h - pad_h) * scale - 2 * crop_margin
     output_w = (w - pad_w) * scale - 2 * crop_margin
 
-    output_video_path = os.path.join(output_folder, "output_duf_fixed.mp4")
+    output_video_path = os.path.join(tmp_output, "output_temp.mp4").replace(os.sep, '/')
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fps = 25
-    total_frames = len(input_frames)
     video_writer = cv2.VideoWriter(output_video_path, fourcc, fps, (output_w, output_h))
 
     for i in range(len(input_frames)):
         window = padded_frames[i:i + window_size]
         padded_window = [pad_to_multiple_of(frame)[0] for frame in window]
-
         input_tensor = preprocess_frames(padded_window, device)
+
         with torch.no_grad():
             output = model(input_tensor)
 
         output_img = postprocess_output(output, scale=scale, pad_h=pad_h, pad_w=pad_w, crop_margin=crop_margin)
-        frame_name = f"frame_{i:04d}_duf.png"
-        cv2.imwrite(os.path.join(output_folder, frame_name), output_img)
-        video_writer.write(output_img)
-        print(f"Processing {frame_name} ({(i+1)/total_frames * 100:.2f}%)")
-        # print(f'Processing: {idx + 1} / {total_images} ({(idx + 1) / total_images * 100:.2f}%)')
 
-    for filename in os.listdir(os.path.dirname(output_video_path)):
-        file_path = Path(os.path.dirname(output_video_path)) / filename
-        if os.path.isfile(file_path) and filename.endswith('_duf.png'):
-            os.remove(file_path)  # 删除所有临时图片
+        # 保存当前帧
+        out_frame_name = f"sr_{i:04d}.png"
+        out_path = os.path.join(tmp_output, out_frame_name).replace(os.sep, "/")
+        cv2.imwrite(out_path, output_img)
+        video_writer.write(output_img)
+
+        print(f"Processing {out_frame_name} ({(i+1)/len(input_frames) * 100:.2f}%)")
+
+        # 保存低分图
+        input_bgr = input_frames[i]
+        low_path = os.path.join(tmp_output, f"lr_{i:04d}.png").replace(os.sep, "/")
+        cv2.imwrite(low_path, input_bgr)
+
+        # 展示对比（每一帧更新窗口）
+        if i == 0 or i == len(input_frames) - 1:
+            # 仅在第一帧和最后一帧显示对比
+            display_images(low_path, out_path)
 
     video_writer.release()
-    print(f"Full-resolution video saved to: {output_video_path}")
+
+    # 移动视频到目标目录
+    final_output_path = os.path.join(output_folder, "output_duf_final.mp4").replace(os.sep, "/")
+    shutil.move(output_video_path, final_output_path)
+    print(f"saved: {final_output_path}")
+
+    # 清理临时目录（仅删除图像，保留输出视频已移出）
+    for file in os.listdir(tmp_output):
+        path = os.path.join(tmp_output, file)
+        if file.lower().endswith(".png"):
+            os.remove(path)
+    os.rmdir(tmp_output)
+    print("tmp done")
 
 
 def main():
@@ -142,7 +175,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set up model
-    if args.scale ==2 :
+    if args.scale == 2:
         args.model_path = r'D:\gracode\sr_models\Video\DUF\DUF_x2_16L.pth'
         num_layer = 16
     elif args.scale == 3:
@@ -153,7 +186,6 @@ def main():
         num_layer = 52
     else:
         raise ValueError("无效的放大倍数")
-
 
     print(f"scale: {args.scale}")
     model = load_model(args.model_path, scale=args.scale, num_layer=num_layer, device=device)

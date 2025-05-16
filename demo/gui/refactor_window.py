@@ -285,16 +285,27 @@ class InferenceGUI(QMainWindow):
                     self.log_message("SUCCESS", f"展示对比图片")
                     self.display_signal.emit(input_path, output_image_path)
 
-
                 elif input_type == 'folder':
-                    """文件夹只对比第一张,视频只对比第一帧, 视频需要创建临时文件夹而不是output文件夹里的, 并且当用户点击取消之后, 需要删除临时文件夹"""
-                    # 打开输出文件夹
-                    self.log_message("SUCCESS", "打开输出文件夹")
-                    open_output_folder(output_path)
-                else:
-                    # 视频
-                    self.log_message("SUCCESS", "打开输出文件夹")
-                    open_output_folder(output_path)
+                    # 选择输入文件夹中第一张图像
+                    input_files = sorted([
+                        f for f in os.listdir(input_path)
+                        if os.path.isfile(os.path.join(input_path, f)) and f.lower().endswith(('.png', '.jpg', '.jpeg'))
+                    ])
+                    if not input_files:
+                        self.log_message("ERROR", "输入文件夹中没有可用的图像")
+                        return
+
+                    first_input_name = os.path.splitext(input_files[0])[0]
+                    input_image_path = os.path.join(input_path, input_files[0]).replace(os.sep, "/")
+                    output_image_path = os.path.join(output_path, f"{first_input_name}_{model_type}.png").replace(os.sep, "/")
+
+                    # 展示第一张图像对比
+                    self.log_message("SUCCESS", f"仅展示第一张对比图片")
+                    self.display_signal.emit(input_image_path, output_image_path)
+                # else:
+                    # # 视频
+                    # self.log_message("SUCCESS", "打开输出文件夹")
+                    # open_output_folder(output_path)
 
             except Exception as e:
                 if self.process != None:

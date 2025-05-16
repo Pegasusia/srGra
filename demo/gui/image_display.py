@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QDialog, QLabel, QHBoxLayout, QVBoxLayout, QWidget, QSizePolicy, QFrame, QPushButton
-from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtCore import Qt, QRect, QTimer
 from PyQt5.QtGui import QPixmap, QPainter, QPen
 from PIL import Image
-from logic.utils import open_output_file
 import os
+import sys
 
 
 class SplitImageWidget(QWidget):
@@ -39,12 +39,16 @@ class SplitImageWidget(QWidget):
             high_scaled = self.high_res.scaled(target_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             # 左侧低分图
-            painter.drawPixmap(QRect(target_x, target_y, half, target_size.height()),
-                            low_scaled.copy(0, 0, half, target_size.height()))
+            painter.drawPixmap(
+                QRect(target_x, target_y, half, target_size.height()),
+                low_scaled.copy(0, 0, half, target_size.height()))
 
             # 右侧高分图
-            painter.drawPixmap(QRect(target_x + half, target_y, target_size.width() - half, target_size.height()),
-                            high_scaled.copy(half, 0, target_size.width() - half, target_size.height()))
+            painter.drawPixmap(
+                QRect(target_x + half, target_y,
+                      target_size.width() - half, target_size.height()),
+                high_scaled.copy(half, 0,
+                                 target_size.width() - half, target_size.height()))
 
             # 分割线（在图像范围中）
             pen = QPen(Qt.red, 2)
@@ -110,7 +114,6 @@ class ImageComparisonDialog(QDialog):
         layout.addLayout(row_layout)
         self.setLayout(layout)
 
-
         # 打开指定文件
         self.open_folder = QPushButton("打开指定文件夹")
         self.open_folder.setStyleSheet("padding: 12px; font-weight: bold; font-size: 22px;")
@@ -119,7 +122,22 @@ class ImageComparisonDialog(QDialog):
         layout.addWidget(self.open_folder)
 
 
+def open_output_file(file_path):
+    """打开文件所在的文件夹，并选中该文件"""
+    if os.name == "nt":  # Windows
+        os.startfile(os.path.dirname(file_path))
+    elif sys.platform == "darwin":  # macOS
+        subprocess.run(["open", "-R", file_path])
+    elif sys.platform.startswith("linux"):
+        # Linux 不支持选中文件，只能打开目录
+        folder = os.path.dirname(file_path)
+        subprocess.run(["xdg-open", folder])
+    else:
+        raise OSError("Unsupported operating system")
+
+
 def display_images(input_image_path, output_image_path):
     """显示图像对比"""
     dialog = ImageComparisonDialog(output_image_path, input_image_path)
-    dialog.exec_() # 阻塞式对话框
+    dialog.exec_()  # 阻塞式对话框
+    # dialog.show()  # 非阻塞式对话框

@@ -1,108 +1,69 @@
 import os
+import shutil
 import torch
 import cv2
+import time
+import argparse
+import tempfile
+from pathlib import Path
 import numpy as np
 from basicsr.archs.duf_arch import DUF
+from inference_process import display_images  # 假设你已有该函数
 
 
-def load_model(model_path, scale=4, num_layer=52, device='cuda'):
-    model = DUF(scale=scale, num_layer=num_layer)
-    state_dict = torch.load(model_path, map_location=torch.device('cpu'))
-    model.load_state_dict(state_dict['params'], strict=True)
-    model.eval().to(device)
-    print(f"Model loaded from {model_path}")
-    return model
+def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4):
+    # 使用临时目录保存图像帧
+    with tempfile.TemporaryDirectory() as tmp_output:
+        print(f"Using temporary folder: {tmp_output}")
+
+        os.makedirs(output_folder, exist_ok=True)
+        window_size = model.num_frames if hasattr(model, 'num_frames') else 7
+        center = window_size // 2
+
+        pad_front = [input_frames[0]] * center
+        pad_back = [input_frames[-1]] * center
+        padded_frames = pad_front + input_frames + pad_back
+
+        crop_margin = 4
+        padded_sample, pad_h, pad_w = pad_to_multiple_of(input_frames[0])
+        h, w, _ = padded_sample.shape
+        output_h = (h - pad_h) * scale - 2 * crop_margin
+        output_w = (w - pad_w) * scale - 2 * crop_margin
+
+        output_video_path = os.path.join(tmp_output, "output_duf_temp.mp4").replace(os.sep, '/')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = 25
+        video_writer = cv2.VideoWriter(output_video_path, fourcc, fps, (output_w, output_h))
+
+        for i in range(len(input_frames)):
+            window = padded_frames[i:i + window_size]
+            padded_window = [pad_to_multiple_of(frame)[0] for frame in window]
+            input_tensor = preprocess_frames(padded_window, device)
+
+            with torch.no_grad():
+                output = model(input_tensor)
+
+            output_img = postprocess_output(output, scale=scale, pad_h=pad_h, pad_w=pad_w, crop_margin=crop_margin)
+            frame_name = f"frame_{i:04d}_duf.png"
+            out_path = os.path.join(tmp_output, frame_name)
+            cv2.imwrite(out_path, output_img)
+            video_writer.write(output_img)
+            print(f"[Frame {i+1}/{len(input_frames)}] Saved: {frame_name}")
+
+            # 实时显示图像对比（原始 vs 超分）
+            input_bgr = input_frames[i]
+            input_path = os.path.join(tmp_output, f"low_{i:04d}.png")
+            cv2.imwrite(input_path, input_bgr)
+            display_images(input_path, out_path)  # 调用你的对比展示函数
+
+        video_writer.release()
+
+        # 处理完成，复制视频到最终目录
+        final_output_path = os.path.join(output_folder, "output_duf_final.mp4").replace(os.sep, "/")
+        shutil.move(output_video_path, final_output_path)
+        print(f"Final video saved to: {final_output_path}")
+        # 临时目录自动删除
 
 
-def center_crop(frame, crop_size=(96, 96)):
-    h, w, _ = frame.shape
-    ch, cw = crop_size
-    start_y = (h - ch) // 2
-    start_x = (w - cw) // 2
-    return frame[start_y:start_y + ch, start_x:start_x + cw]
-
-
-def preprocess_frames(frames, device, crop_size=(96, 96)):
-    frames = [center_crop(frame, crop_size) for frame in frames]
-    frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]
-    frames = [frame.astype(np.float32) / 255.0 for frame in frames]
-    frames = [np.transpose(frame, (2, 0, 1)) for frame in frames]  # (C, H, W)
-    frames = np.stack(frames, axis=0)  # (T, C, H, W)
-    frames = torch.from_numpy(frames).unsqueeze(0).to(device)  # (1, T, C, H, W)
-    return frames
-
-
-def postprocess_output(output):
-    output = output.squeeze(0).cpu().numpy()
-    output = np.transpose(output, (1, 2, 0))  # (H, W, C)
-    output = (output * 255.0).clip(0, 255).astype(np.uint8)
-    output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
-    return output
-
-
-def duf_full_frame_inference(model, input_frames, device, output_folder, crop_size=(96, 96), scale=4):
-    os.makedirs(output_folder, exist_ok=True)
-
-    window_size = model.num_frames if hasattr(model, 'num_frames') else 7
-    center = window_size // 2
-
-    h, w, _ = center_crop(input_frames[0], crop_size).shape
-    output_h, output_w = h * scale, w * scale
-
-    # 边缘帧填充，使得所有原始帧都有中心位置
-    pad_front = [input_frames[0]] * center
-    pad_back = [input_frames[-1]] * center
-    padded_frames = pad_front + input_frames + pad_back
-
-    output_video_path = os.path.join(output_folder, "output_duf_full.mp4")
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    fps = 25  # 可自定义
-    video_writer = cv2.VideoWriter(output_video_path, fourcc, fps, (output_w, output_h))
-
-    for i in range(len(input_frames)):
-        window = padded_frames[i:i + window_size]
-        input_tensor = preprocess_frames(window, device, crop_size)
-        with torch.no_grad():
-            output = model(input_tensor)
-        output_img = postprocess_output(output)
-
-        frame_name = f"frame_{i:04d}.png"
-        cv2.imwrite(os.path.join(output_folder, frame_name), output_img)
-        video_writer.write(output_img)
-        print(f"Processed and saved {frame_name}")
-
-    video_writer.release()
-    print(f"Full-length video saved to {output_video_path}")
-
-
-def main():
-    model_path = r"D:\gracode\sr_models\Video\DUF\DUF_x4_16L.pth"
-    input_video_path = r"D:\gracode\sr_data\video\video_12f.mp4"
-    output_folder = r"D:\gracode\sr_results\duf_full"
-    crop_size = (96, 96)
-    scale = 4
-    num_layer = 16
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-    # 加载模型
-    model = load_model(model_path, scale=scale, num_layer=num_layer, device=device)
-
-    # 读取视频帧
-    cap = cv2.VideoCapture(input_video_path)
-    input_frames = []
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        input_frames.append(frame)
-    cap.release()
-
-    if len(input_frames) < 1:
-        raise ValueError("视频帧为空")
-
-    # 使用 DUF 进行完整推理（对每一帧进行超分）
-    duf_full_frame_inference(model, input_frames, device, output_folder, crop_size=crop_size, scale=scale)
-
-
-if __name__ == "__main__":
-    main()
+# 你现有的 pad_to_multiple_of, preprocess_frames, postprocess_output 保持不变
+# main 函数调用此新版 duf_full_frame_inference 即可
