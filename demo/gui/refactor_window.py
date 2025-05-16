@@ -5,15 +5,20 @@ from tkinter import N
 from PyQt5.QtWidgets import (QMainWindow, QLabel, QLineEdit, QPushButton, QTextEdit, QFileDialog, QVBoxLayout,
                              QHBoxLayout, QWidget, QRadioButton, QButtonGroup)
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from gui.log_signal import LogSignal
 from logic.config_manager import ConfigManager
 from logic.utils import (contains_chinese, show_warning_chinese, show_warning_path, get_model_info, check_file_type,
                          show_warning_file, open_output_folder)
 
+# from gui.image_display import display_images
+from gui.image_test import display_images
 
 class InferenceGUI(QMainWindow):
     """图像超分辨率重建系统主窗口类"""
+
+    display_signal = pyqtSignal(str, str)  # 参数：input_image_path, output_image_path
+
 
     def __init__(self):
         super().__init__()
@@ -28,6 +33,9 @@ class InferenceGUI(QMainWindow):
 
         self.init_ui()
         self.load_config()
+
+        self.display_signal.connect(self.display_comparison_dialog)
+
 
     def init_ui(self):
         """初始化UI组件"""
@@ -51,7 +59,7 @@ class InferenceGUI(QMainWindow):
         # 设置布局
         layout = QVBoxLayout()
 
-        banner = QLabel("超分辨率重建系统")
+        banner = QLabel("超分辨率重建系统 重庆工商大学 2021级 智能科学与技术 李昊")
         banner.setStyleSheet("font-size: 28px; font-weight: bold; color: #1a1a1a; margin-bottom: 20px;")
         banner.setAlignment(Qt.AlignCenter)
         layout.addWidget(banner)
@@ -109,7 +117,7 @@ class InferenceGUI(QMainWindow):
         # 日志输出区域
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
-        self.log_text.setStyleSheet("background-color: white; border: 1px solid gray;")
+        self.log_text.setStyleSheet("background-color: white; border: 1px solid gray; padding: 10px;")
         # 设置字体大小
         current_font = self.log_text.font()
         current_font.setPointSize(12)
@@ -129,6 +137,7 @@ class InferenceGUI(QMainWindow):
         self.stop_button.setEnabled(False)
         layout.addWidget(self.stop_button)
 
+        # 窗口中央配件
         central = QWidget()
         central.setLayout(layout)
         self.setCentralWidget(central)
@@ -138,6 +147,12 @@ class InferenceGUI(QMainWindow):
         self.log_message("WELCOME", "请选择输入类型、放大倍数和输入输出路径")
         self.log_message("WELCOME", "点击开始推理按钮或键盘回车(ENTER)进行处理")
         self.log_message("WELCOME", "推理过程中请勿关闭窗口，推理完成后可查看输出结果。")
+
+
+    def display_comparison_dialog(self, input_path, output_path):
+        display_images(input_path, output_path)
+
+
 
     def keyPressEvent(self, event):
         """ESC退出程序"""
@@ -260,11 +275,20 @@ class InferenceGUI(QMainWindow):
                     self.log_message("ERROR", line.strip())
                 self.process.wait()
                 self.log_message("SUCCESS", "推理完成")
-                open_output_folder(output_path)
 
                 self.process = None
                 self.start_button.setEnabled(True)
                 self.stop_button.setEnabled(False)
+
+                # 显示图片
+                image_name = os.path.splitext(os.path.basename(input_path))[0]
+                output_image_path = os.path.join(output_path, f"{image_name}_{model_type}.png").replace(os.sep, "/")
+
+                # open_output_folder(output_path)
+
+                self.log_message("SUCCESS", f"展示对比图片")
+                self.display_signal.emit(input_path, output_image_path)
+
             except Exception as e:
                 if self.process != None:
                     self.log_message("ERROR", f"推理失败: {e}")

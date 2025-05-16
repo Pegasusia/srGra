@@ -25,7 +25,7 @@ def main():
     print("ESRGAN...")
     print("Load model...")
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default=None)
+    parser.add_argument('--model_path', type=str, default=r'D:\gracode\sr_models\Pic\ESRGAN\ESRGAN_PSNR_SRx4_DF2K.pth')
     parser.add_argument('--input', type=str, default=None, help='input image folder')
     parser.add_argument('--input_file', type=str, default=None, help='input single image file')
     parser.add_argument('--output', type=str, default=None, help='output folder')
