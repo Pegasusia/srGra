@@ -22,8 +22,8 @@ def main():
 
     start_time = time.perf_counter()
 
-    print("ESRGAN...")
-    print("Load model...")
+    # print("ESRGAN...")
+    # print("Load model...")
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default=r'D:\gracode\sr_models\Pic\ESRGAN\ESRGAN_PSNR_SRx4_DF2K.pth')
     parser.add_argument('--input', type=str, default=None, help='input image folder')
@@ -40,10 +40,10 @@ def main():
 
     model.eval()
     model = model.to(device)
-    print(f"scale: {args.scale}")
-    print("Load model done...")
+    print(f"当前放大倍数: {args.scale}")
+    print("载入模型完成...")
 
-    print("start...")
+    print("即将开始推理...")
     os.makedirs(args.output, exist_ok=True)
 
     if args.input_file:
@@ -56,7 +56,7 @@ def main():
         image_paths = sorted(glob.glob(os.path.join(args.input, '*')))
         total_images = len(image_paths)
 
-        print(f"Total images: {total_images}")
+        print(f"总图片数量: {total_images}")
 
         for idx, path in enumerate(sorted(glob.glob(os.path.join(args.input, '*')))):
             imgname = os.path.splitext(os.path.basename(path))[0]
@@ -82,7 +82,7 @@ def main():
                 print('Save:', idx, imgname)
 
     end_time = time.perf_counter()
-    print(f"Total time: {end_time - start_time:.6f} seconds")
+    print(f"共计用时: {end_time - start_time:.6f} 秒")
 
 
 def process_image(image_path, model, device, output_folder):
@@ -104,7 +104,7 @@ def process_image(image_path, model, device, output_folder):
         output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))
         output = (output * 255.0).round().astype(np.uint8)
         cv2.imwrite(os.path.join(output_folder, f'{imgname}_ESRGAN.png'), output)
-        print('save:', imgname + '_ESRGAN.png')
+        print('保存图片:', imgname + '_ESRGAN.png')
 
         # # enhanced image
         # enhanced_image_path = os.path.join(output_folder, f'{imgname}_ESRGAN.png').replace(os.sep, '/')

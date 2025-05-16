@@ -9,6 +9,7 @@ from basicsr.utils.registry import DATASET_REGISTRY
 
 @DATASET_REGISTRY.register()
 class PairedImageDataset(data.Dataset):
+    """用来训练配对图像数据集的类"""
     """Paired image dataset for image restoration.
 
     Read LQ (Low Quality, e.g. LR (Low Resolution), blurry, noisy, etc) and GT image pairs.
@@ -68,6 +69,7 @@ class PairedImageDataset(data.Dataset):
 
         # Load gt and lq images. Dimension order: HWC; channel order: BGR;
         # image range: [0, 1], float32.
+        # 加载gt和lq图像。维度顺序：HWC；通道顺序：BGR；
         gt_path = self.paths[index]['gt_path']
         img_bytes = self.file_client.get(gt_path, 'gt')
         img_gt = imfrombytes(img_bytes, float32=True)
@@ -76,6 +78,7 @@ class PairedImageDataset(data.Dataset):
         img_lq = imfrombytes(img_bytes, float32=True)
 
         # augmentation for training
+        # 开始增强训练
         if self.opt['phase'] == 'train':
             gt_size = self.opt['gt_size']
             # random crop

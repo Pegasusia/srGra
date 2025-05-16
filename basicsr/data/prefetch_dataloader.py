@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 
 
 class PrefetchGenerator(threading.Thread):
+    """这是预读取数据函数"""
     """A general prefetch generator.
 
     Reference: https://stackoverflow.com/questions/7323664/python-generator-pre-fetch

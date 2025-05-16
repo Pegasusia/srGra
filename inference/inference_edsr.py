@@ -19,8 +19,8 @@ def main():
 
     start_time = time.perf_counter()
 
-    print("EDSR...")
-    print("Load model...")
+    # print("EDSR...")
+    # print("Load model...")
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--model_path',
@@ -46,13 +46,13 @@ def main():
     # model.load_state_dict(torch.load(args.model_path)['params'], strict=False)
     # model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu')), strict=False)
 
-    print(f"scale: {args.scale}")
+    print(f"当前放大倍数: {args.scale}")
     model.load_state_dict(torch.load(args.model_path, map_location=torch.device('cpu'))['params'], strict=True)
     model.eval()
     model = model.to(device)
-    print("Load model done...")
+    print("载入模型完成...")
 
-    print("Start...")
+    print("即将开始推理...")
     os.makedirs(args.output, exist_ok=True)
 
     # print(model)
@@ -77,7 +77,7 @@ def main():
         image_paths = sorted(glob.glob(os.path.join(args.input, '*')))
         total_images = len(image_paths)
 
-        print(f"Total images: {total_images}")
+        print(f"总图片数量: {total_images}")
         for idx, path in enumerate(sorted(glob.glob(os.path.join(args.input, '*')))):
             imgname = os.path.splitext(os.path.basename(path))[0]
             # print('Processing: ', idx, imgname)
@@ -99,11 +99,11 @@ def main():
                 output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))
                 output = (output * 255.0).round().astype(np.uint8)
                 cv2.imwrite(os.path.join(args.output, f'{imgname}_EDSR.png'), output)
-                print('Save:', imgname + '_EDSR.png')
+                print('保存图片:', imgname + '_EDSR.png')
 
 
     end_time = time.perf_counter()
-    print(f"Total time: {end_time - start_time:.6f} seconds")
+    print(f"共计用时: {end_time - start_time:.6f} 秒")
 
 
 def process_image(image_path, model, device, output_folder):
@@ -124,7 +124,7 @@ def process_image(image_path, model, device, output_folder):
         output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))
         output = (output * 255.0).round().astype(np.uint8)
         cv2.imwrite(os.path.join(output_folder, f'{imgname}_EDSR.png'), output)
-        print('Save:', imgname + '_EDSR.png')
+        print('保存图片:', imgname + '_EDSR.png')
 
     except Exception as error:
         print('Error', error, imgname)

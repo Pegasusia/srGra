@@ -17,7 +17,9 @@ from gui.image_display import display_images
 class InferenceGUI(QMainWindow):
     """图像超分辨率重建系统主窗口类"""
 
-    display_signal = pyqtSignal(str, str)  # 参数：input_image_path, output_image_path
+    # 信号，用来显示对比图像
+    display_signal = pyqtSignal(str, str)
+    # display_video_signal = pyqtSignal(str, str)
 
 
     def __init__(self):
@@ -35,6 +37,7 @@ class InferenceGUI(QMainWindow):
         self.load_config()
 
         self.display_signal.connect(self.display_comparison_dialog)
+        # self.display_video_signal.connect(self.display_video)
 
 
     def init_ui(self):
@@ -152,6 +155,10 @@ class InferenceGUI(QMainWindow):
         """显示对比图像的对话框"""
         display_images(input_path, output_path)
 
+    # def display_video(self, low_path, high_path):
+    #     """显示视频对比"""
+    #     display_video(low_path, high_path)
+
     def keyPressEvent(self, event):
         """ESC退出程序"""
         if event.key() == Qt.Key_Escape:
@@ -266,7 +273,7 @@ class InferenceGUI(QMainWindow):
 
                 command = ["python", script] + args + ["--output", output_path] + ["--scale", str(scale)]
                 self.process = subprocess.Popen(
-                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+                    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',bufsize=1)
                 for line in self.process.stdout:
                     self.log_message("INFO", line.strip())
                 for line in self.process.stderr:
@@ -303,9 +310,9 @@ class InferenceGUI(QMainWindow):
                     self.log_message("SUCCESS", f"仅展示第一张对比图片")
                     self.display_signal.emit(input_image_path, output_image_path)
                 # else:
-                    # # 视频
-                    # self.log_message("SUCCESS", "打开输出文件夹")
-                    # open_output_folder(output_path)
+                # # 视频
+                # self.log_message("SUCCESS", "打开输出文件夹")
+                # open_output_folder(output_path)
 
             except Exception as e:
                 if self.process != None:

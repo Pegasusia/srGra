@@ -10,6 +10,7 @@ from basicsr.utils.registry import DATASET_REGISTRY
 
 @DATASET_REGISTRY.register()
 class Vimeo90KDataset(data.Dataset):
+    """用来训练 Vimeo90K 数据集的类"""
     """Vimeo90K dataset for training.
 
     The keys are generated from a meta info txt file.

@@ -4,6 +4,7 @@ import torch
 
 
 def mod_crop(img, scale):
+    """用来裁剪图像的函数，主要用于测试阶段"""
     """Mod crop images, used during testing.
 
     Args:
@@ -24,6 +25,7 @@ def mod_crop(img, scale):
 
 
 def paired_random_crop(img_gts, img_lqs, gt_patch_size, scale, gt_path=None):
+    """用来裁剪图像的函数，主要用于训练阶段"""
     """Paired random crop. Support Numpy array and Tensor inputs.
 
     It crops lists of lq and gt images with corresponding locations.
@@ -92,6 +94,7 @@ def paired_random_crop(img_gts, img_lqs, gt_patch_size, scale, gt_path=None):
 
 
 def augment(imgs, hflip=True, rotation=True, flows=None, return_status=False):
+    """用来增强图像的函数，主要用于训练阶段"""
     """Augment: horizontal flips OR rotate (0, 90, 180, 270 degrees).
 
     We use vertical flip and transpose for rotation implementation.
@@ -159,6 +162,7 @@ def augment(imgs, hflip=True, rotation=True, flows=None, return_status=False):
 
 
 def img_rotate(img, angle, center=None, scale=1.0):
+    """用来旋转图像的函数，主要用于训练阶段"""
     """Rotate image.
 
     Args:

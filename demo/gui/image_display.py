@@ -1,6 +1,10 @@
+_dialog_ref = None  # 全局变量
+
+
 from PyQt5.QtWidgets import QDialog, QLabel, QHBoxLayout, QVBoxLayout, QWidget, QSizePolicy, QFrame, QPushButton
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QRect, QTimer
-from PyQt5.QtGui import QPixmap, QPainter, QPen
+from PyQt5.QtGui import QPixmap, QPainter, QPen, QColor
 from PIL import Image
 import os
 import sys
@@ -50,10 +54,23 @@ class SplitImageWidget(QWidget):
                 high_scaled.copy(half, 0,
                                  target_size.width() - half, target_size.height()))
 
-            # 分割线（在图像范围中）
-            pen = QPen(Qt.red, 2)
+            # # 分割线（在图像范围中）
+            # pen = QPen(Qt.red, 2)
+            # painter.setPen(pen)
+            # painter.drawLine(target_x + half, target_y, target_x + half, target_y + target_size.height())
+
+            # color = QColor(0, 191, 255, 200)  # 青蓝 + 半透明
+            # pen = QPen(color, 2)
+            # pen.setStyle(Qt.SolidLine)
+            # pen.setCapStyle(Qt.RoundCap)
+
+            color = QColor(255, 0, 0, 230)  # 红色 + 微透明
+            pen = QPen(color, 3)            # 适当加粗
+            pen.setCapStyle(Qt.RoundCap)   # 圆头线条更柔和
+
             painter.setPen(pen)
             painter.drawLine(target_x + half, target_y, target_x + half, target_y + target_size.height())
+
 
         finally:
             painter.end()
@@ -141,3 +158,9 @@ def display_images(input_image_path, output_image_path):
     dialog = ImageComparisonDialog(output_image_path, input_image_path)
     dialog.exec_()  # 阻塞式对话框
     # dialog.show()  # 非阻塞式对话框
+
+
+# def display_video(low_path, high_path):
+#     global _dialog_ref
+#     _dialog_ref = ImageComparisonDialog(high_path, low_path)
+#     _dialog_ref.show()

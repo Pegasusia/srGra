@@ -16,13 +16,12 @@ from PyQt5.QtWidgets import QApplication
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from demo.gui.image_display import display_images
 
-
 def load_model(model_path, scale=4, num_layer=52, device='cuda'):
     model = DUF(scale=scale, num_layer=num_layer)
     state_dict = torch.load(model_path, map_location=torch.device('cpu'))
     model.load_state_dict(state_dict['params'], strict=True)
     model.eval().to(device)
-    print(f"Model loaded from {model_path}")
+    # print(f"Model loaded from {model_path}")
     return model
 
 
@@ -36,6 +35,7 @@ def pad_to_multiple_of(x, multiple=4):
 
 
 def preprocess_frames(frames, device):
+    """预处理输入帧，转换为张量并进行归一化。"""
     frames = [frame.astype(np.float32) / 255.0 for frame in frames]
     frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]
     frames = [np.transpose(frame, (2, 0, 1)) for frame in frames]
@@ -130,6 +130,10 @@ def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4
         # 展示对比（每一帧更新窗口）
         if i == 0 or i == len(input_frames) - 1:
             # 仅在第一帧和最后一帧显示对比
+            if i == 0:
+                print("输出视频的第一帧对比, 请确认后继续系统推理")
+            else:
+                print("输出视频的最后一帧对比, 请确认后结束系统推理")
             display_images(low_path, out_path)
 
     video_writer.release()
@@ -137,7 +141,7 @@ def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4
     # 移动视频到目标目录
     final_output_path = os.path.join(output_folder, "output_duf_final.mp4").replace(os.sep, "/")
     shutil.move(output_video_path, final_output_path)
-    print(f"saved: {final_output_path}")
+    print(f"视频保存到: {final_output_path}")
 
     # 清理临时目录（仅删除图像，保留输出视频已移出）
     for file in os.listdir(tmp_output):
@@ -145,7 +149,7 @@ def duf_full_frame_inference(model, input_frames, device, output_folder, scale=4
         if file.lower().endswith(".png"):
             os.remove(path)
     os.rmdir(tmp_output)
-    print("tmp done")
+    print("处理临时文件完成")
 
 
 def main():
@@ -187,11 +191,11 @@ def main():
     else:
         raise ValueError("无效的放大倍数")
 
-    print(f"scale: {args.scale}")
+    print(f"当前放大倍数: {args.scale}")
     model = load_model(args.model_path, scale=args.scale, num_layer=num_layer, device=device)
 
-    print("Load model done...")
-    print("Start...")
+    print("载入模型完成...")
+    print("即将开始推理...")
     os.makedirs(args.output, exist_ok=True)
 
     cap = cv2.VideoCapture(args.input_video_path)
@@ -208,8 +212,19 @@ def main():
 
     duf_full_frame_inference(model, input_frames, device, args.output, scale=args.scale)
 
+    # end_time = time.perf_counter()
+    # print(f"Total time: {end_time - start_time:.6f} seconds")
+
     end_time = time.perf_counter()
-    print(f"Total time: {end_time - start_time:.6f} seconds")
+    elapsed_time = end_time - start_time
+    if elapsed_time >= 60:
+        # 如果超过一分钟，按分钟:秒格式显示
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
+        print(f"总用时: {minutes:02d}:{seconds:02d} (分:秒)")
+    else:
+        # 否则直接显示秒数，保留6位小数
+        print(f"总用时: {elapsed_time:.6f} 秒")
 
 
 if __name__ == "__main__":
